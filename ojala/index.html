@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <!-- Puente de estebi-jr.github.io/ojala/ a https://miojala.cl (oct 2026).
+       Script copiado tal cual del inicio de index.html de la app: redirige conservando ruta y ?parámetros
+       y lleva una vez, por el #hash, lo guardado en este navegador (ojala.*.v1). No editar sin revisar la app. -->
+  <script>
+    // Mudanza a miojala.cl (oct 2026). Corre antes que todo; no toca el formato de ojala.*.v1.
+    // · En estebi-jr.github.io/ojala (hosting anterior): lleva lo que este navegador guardó (llaves para editar,
+    //   reservas propias, listas visitadas, tema) a miojala.cl por el #hash, que nunca llega a un servidor, y
+    //   redirige conservando la ruta (#/l/…, #/admin/…) y los ?parámetros. Lo envía una vez; «#/traer»
+    //   (botón de Ajustes) lo fuerza. Nada se borra del dominio viejo (sirve para volver atrás).
+    // · En miojala.cl: recibe esos datos, agrega solo lo que falta (no pisa nada) y limpia la URL.
+    // · En <proyecto>.pages.dev o www: manda a miojala.cl (un solo origen = un solo almacenamiento).
+    (function () {
+      var NEW = 'https://miojala.cl/', OLD = 'estebi-jr.github.io', TAG = '#ojala-traspaso=', SENT = 'ojala.puente.v1';
+      var KEYS = ['ojala.keys.v1', 'ojala.claims.v1', 'ojala.visited.v1', 'ojala.prefs.v1'];
+      var host = location.hostname, ls = null;
+      try { ls = window.localStorage; } catch (e) {}
+      function leave(hash) {
+        window.__ojalaPuente = true;
+        document.documentElement.style.visibility = 'hidden';
+        location.replace(NEW + location.search + hash);
+      }
+      function sig(s) { var h = 5381; for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return s.length + ':' + h; }
+      function read(k, fb) { try { var v = JSON.parse(ls.getItem(k)); return v == null ? fb : v; } catch (e) { return fb; } }
+      function isObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
+
+      if (host === OLD) {
+        var hash = location.hash, force = hash === '#/traer', data = {}, any = false, payload = '';
+        if (force) hash = '#/ajustes';
+        try {
+          for (var i = 0; i < KEYS.length; i++) { var v = ls.getItem(KEYS[i]); if (v) { data[KEYS[i]] = v; any = true; } }
+          if (any) {
+            var json = JSON.stringify(data), s = sig(json);
+            if (force || ls.getItem(SENT) !== s) {
+              payload = btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+              ls.setItem(SENT, s);
+            }
+          }
+        } catch (e) {}
+        leave(payload || force ? TAG + payload + '&volver=' + encodeURIComponent(hash) : hash);
+        return;
+      }
+      if (/^[^.]+\.pages\.dev$/.test(host) || host === 'www.miojala.cl') { leave(location.hash); return; }
+
+      if (location.hash.indexOf(TAG) !== 0) return;
+      var rest = location.hash.slice(TAG.length), at = rest.indexOf('&volver=');
+      var enc = at < 0 ? rest : rest.slice(0, at), back = '', added = 0;
+      try { back = at < 0 ? '' : decodeURIComponent(rest.slice(at + 8)); } catch (e) {}
+      if (back.charAt(0) !== '#') back = '';
+      try {
+        var ref = document.referrer;
+        if (enc && ls && (!ref || ref.indexOf('https://' + OLD + '/') === 0)) {
+          var d = JSON.parse(decodeURIComponent(escape(atob(enc.replace(/-/g, '+').replace(/_/g, '/')))));
+          if (isObj(d)) {
+            ['ojala.keys.v1', 'ojala.claims.v1', 'ojala.prefs.v1'].forEach(function (k) {
+              var inc = null;
+              try { inc = typeof d[k] === 'string' ? JSON.parse(d[k]) : null; } catch (e) {}
+              if (!isObj(inc)) return;
+              var cur = read(k, {}), changed = false;
+              if (!isObj(cur)) cur = {};
+              for (var id in inc) {
+                if (!Object.prototype.hasOwnProperty.call(inc, id) || id in cur) continue;
+                var val = inc[id];
+                if (k === 'ojala.keys.v1' && !(isObj(val) && typeof val.slug === 'string' && typeof val.token === 'string')) continue;
+                if (k === 'ojala.claims.v1' && typeof val !== 'string') continue;
+                if (k === 'ojala.keys.v1') added++;
+                cur[id] = val; changed = true;
+              }
+              if (changed) ls.setItem(k, JSON.stringify(cur));
+            });
+            var vin = null;
+            try { vin = typeof d['ojala.visited.v1'] === 'string' ? JSON.parse(d['ojala.visited.v1']) : null; } catch (e) {}
+            if (Array.isArray(vin)) {
+              var vis = read('ojala.visited.v1', []), seen = {};
+              if (!Array.isArray(vis)) vis = [];
+              for (var j = 0; j < vis.length; j++) if (vis[j] && vis[j].slug) seen[vis[j].slug] = 1;
+              var before = vis.length;
+              for (var j2 = 0; j2 < vin.length; j2++) {
+                var x = vin[j2];
+                if (isObj(x) && typeof x.slug === 'string' && !seen[x.slug]) { seen[x.slug] = 1; vis.push(x); added++; }
+              }
+              if (vis.length !== before) {
+                vis.sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+                ls.setItem('ojala.visited.v1', JSON.stringify(vis.slice(0, 20)));
+              }
+            }
+          }
+        }
+      } catch (e) {}
+      if (back === '#/ajustes') { try { sessionStorage.setItem('ojala.traspaso', String(added)); } catch (e) {} }
+      try { history.replaceState(null, '', location.pathname + location.search + back); } catch (e) { location.hash = back; }
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ojalá · Tu lista de deseos</title>
+  <meta name="robots" content="noindex">
+  <link rel="canonical" href="https://miojala.cl/">
+  <meta name="theme-color" content="#FF2D55">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://miojala.cl/">
+  <meta property="og:site_name" content="Ojalá">
+  <meta property="og:locale" content="es_CL">
+  <meta property="og:title" content="Ojalá · Tu lista de deseos">
+  <meta property="og:description" content="Pega links de cualquier tienda, compártela por WhatsApp y nadie repite regalos.">
+  <meta property="og:image" content="https://miojala.cl/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="https://miojala.cl/favicon.ico" sizes="48x48">
+  <style>body{font:17px/1.4 -apple-system,system-ui,sans-serif;text-align:center;padding:64px 16px;color:#1c1c1e;background:#fff}a{color:#ff2d55}@media (prefers-color-scheme:dark){body{color:#f2f2f7;background:#000}}</style>
+</head>
+<body>
+  <p>Ojalá ahora vive en <a href="https://miojala.cl/">miojala.cl</a>.</p>
+</body>
+</html>

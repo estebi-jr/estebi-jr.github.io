@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <script>
+    // Puente de Ojalá: cualquier ruta que no exista en este sitio (sobre todo estebi-jr.github.io/ojala/…, páginas por ocasión, etc.)
+    // va a la misma ruta en miojala.cl, sin el /ojala del inicio.
+    (function () {
+      var p = location.pathname.replace(/^\/ojala(?=\/|$)/, '').replace(/\/index\.html$/, '/');
+      location.replace('https://miojala.cl' + (p || '/') + location.search + location.hash);
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ojalá · Tu lista de deseos</title>
+  <meta name="robots" content="noindex">
+  <style>body{font:17px/1.4 -apple-system,system-ui,sans-serif;text-align:center;padding:64px 16px;color:#1c1c1e;background:#fff}a{color:#ff2d55}@media (prefers-color-scheme:dark){body{color:#f2f2f7;background:#000}}</style>
+</head>
+<body>
+  <p>Ojalá ahora vive en <a href="https://miojala.cl/">miojala.cl</a>.</p>
+</body>
+</html>
