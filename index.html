@@ -37,7 +37,7 @@
   --shadow:0 1px 2px rgba(11,11,12,.05),0 22px 48px -26px rgba(11,11,12,.28);
   --scene-1:#3C424A; --scene-2:#23272D; --scene-3:#121418;
   --scene-amber:rgba(255,184,107,.62); --scene-red:rgba(255,92,92,.45); --scene-blue:rgba(170,198,255,.36);
-  --poster-base:#0E0E10; --poster-ink:#F5F5F6; --cursor:#FFFFFF; --on-accent:#FFFFFF;
+  --poster-base:#0E0E10; --poster-ink:#F5F5F6; --cursor:#FFFFFF; --on-accent:#FFFFFF; --photo-scrim:rgba(11,11,12,.6);
   --code-bg:#121316; --code-fg:#E9E9EC; --code-muted:#6C6E77; --code-str:#A9ACB6; --code-line:rgba(255,255,255,.08);
   --phone-bezel:#0B0B0C; --phone-edge:#3A3A41; --phone-ink:#FFFFFF; --island:#000000;
   --phone-chip:rgba(255,255,255,.2); --phone-shade:rgba(0,0,0,.3); --tap:rgba(255,255,255,.5);
@@ -413,6 +413,9 @@ a.icon-btn:active{transform:scale(.95)}
 .portrait svg{position:absolute;right:-18%;top:-6%;width:90%;height:90%;color:var(--line-strong);opacity:.7}
 .portrait span{position:relative;font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .portrait b{position:relative;font-weight:500;font-size:14px}
+.portrait.has-img::after{content:"";position:absolute;inset:auto 0 0;height:46%;background:linear-gradient(to top,var(--photo-scrim),transparent);pointer-events:none}
+.portrait.has-img span,.portrait.has-img b{z-index:1;color:var(--poster-ink)}
+.portrait.has-img span{opacity:.78}
 .portrait[data-pos="0"]{z-index:3;transform:rotate(-2deg)}
 .portrait[data-pos="1"]{z-index:2;transform:translate(14%,-4%) rotate(5deg)}
 .portrait[data-pos="2"]{z-index:1;transform:translate(-12%,5%) rotate(-8deg)}
@@ -715,10 +718,14 @@ const PROFILE = {
       en: "I work with AI every day. I don't use it to think for me; I use it to build what I imagine in a fraction of the time." }
   ],
   links: { linkedin: '' },                         // pega la URL completa de tu perfil
-  portraits: [                                     // retratos generados con IA (pendientes)
-    { label: { es: 'Formal', en: 'Formal' }, src: '' },
-    { label: { es: 'Artística', en: 'Artistic' }, src: '' },
-    { label: { es: 'Ángulo imposible', en: 'Impossible angle' }, src: '' }
+  portraits: [                                     // WebP 1200×1500 (4:5) en assets/portraits/. tag opcional; si falta, "Retrato IA"
+    { label: { es: 'Estudio', en: 'Studio' }, src: 'assets/portraits/estudio.webp',
+      alt: { es: 'Esteban en blanco y negro, con camisa blanca y fondo gris', en: 'Esteban in black and white, white shirt on a grey background' } },
+    { label: { es: 'Vidrio empañado', en: 'Fogged glass' }, src: 'assets/portraits/vidrio.webp',
+      alt: { es: 'Esteban detrás de un vidrio empañado con su E dibujada, de noche', en: 'Esteban behind a fogged window with his E drawn on it, at night' } },
+    { label: { es: 'Graffiti', en: 'Graffiti' }, src: 'assets/portraits/graffiti.webp',
+      tag: { es: 'Foto retocada', en: 'Retouched photo' },
+      alt: { es: 'Esteban de espaldas pintando su asterisco con spray en una pared', en: 'Esteban from behind, spray-painting his asterisk on a wall' } }
   ]
 };
 
@@ -1055,9 +1062,9 @@ function renderAbout() {
   const box = $('#portraits');
   const order = $$('.portrait', box).map(el => el.dataset.pos);
   box.innerHTML = PROFILE.portraits.map((p, i) => `
-    <div class="portrait" data-pos="${order[i] ?? i}">
-      ${p.src ? `<img src="${esc(p.src)}" alt="${esc(ui('portrait_alt', { l: tr(p.label).toLowerCase(), n: PROFILE.fullName }))}">` : '<svg aria-hidden="true"><use href="#logo"/></svg>'}
-      <span>${esc(ui('portrait_tag'))}</span><b>${esc(tr(p.label))}${p.src ? '' : ' · ' + esc(ui('soon'))}</b>
+    <div class="portrait${p.src ? ' has-img' : ''}" data-pos="${order[i] ?? i}">
+      ${p.src ? `<img src="${esc(p.src)}" width="1200" height="1500" loading="lazy" decoding="async" alt="${esc(p.alt ? tr(p.alt) : ui('portrait_alt', { l: tr(p.label).toLowerCase(), n: PROFILE.fullName }))}">` : '<svg aria-hidden="true"><use href="#logo"/></svg>'}
+      <span>${esc(p.tag ? tr(p.tag) : ui('portrait_tag'))}</span><b>${esc(tr(p.label))}${p.src ? '' : ' · ' + esc(ui('soon'))}</b>
     </div>`).join('');
 }
 
